@@ -43,6 +43,7 @@ def parse_args():
         parser.add_argument("--aug_coef", type=float, default=0.5)
         parser.add_argument("--prior_var", type=float, default=0.1)
         parser.add_argument("--weight_loss_ECR", type=float, default=60.0)
+        parser.add_argument("--dropout", type=float, default=0.2)
 
     if model == "KNNTM":
         parser.add_argument('--alpha', type=float, default=1.0)
@@ -78,10 +79,10 @@ if __name__ == "__main__":
     print(args)
     seed.seedEverything(args.seed)
     
-    prj = args.wandb_prj if args.wandb_prj else 'glocom'
-    wandb.login(key="d00c9f41bdf432ec2cd6df65495965d629331898")
-    wandb.init(project=prj, config=args)
-    wandb.log({'time_stamp': current_time})
+    # prj = args.wandb_prj if args.wandb_prj else 'glocom'
+    # wandb.login()
+    # wandb.init(project=prj, config=args)
+    # wandb.log({'time_stamp': current_time})
 
     ########################### Dataset ####################################
     if args.model == "GloCOM":
@@ -100,6 +101,7 @@ if __name__ == "__main__":
     ########################### Model and Training ####################################
     if args.model == "GloCOM":
         model = models.GloCOM.GloCOM.GloCOM(dataset.vocab_size, num_topics=args.num_topics, pretrained_WE=dataset.pretrained_WE,
+                                     dropout=args.dropout,
                                      aug_coef=args.aug_coef,
                                      prior_var=args.prior_var,
                                      weight_loss_ECR=args.weight_loss_ECR)
@@ -153,20 +155,20 @@ if __name__ == "__main__":
     # TD
     TD = evaluations.topic_diversity.compute_topic_diversity(top_words)
     print(f"TD: {TD:.5f}")
-    wandb.log({"TD_15": TD})
+    # wandb.log({"TD_15": TD})
 
     # Purity, NMI
     result = evaluations.clustering.evaluate_clustering(test_theta, dataset.test_labels)
     print(f"Purity: {result['Purity']:.5f}")
-    wandb.log({"Purity": result['Purity']})
+    # wandb.log({"Purity": result['Purity']})
 
     print(f"NMI: {result['NMI']:.5f}")
-    wandb.log({"NMI": result['NMI']})
+    # wandb.log({"NMI": result['NMI']})
 
     # TC
     TCs, TC = evaluations.topic_coherence.compute_topic_coherence_on_wikipedia(top_words_path)
     print(f"TCs: {TCs}")
     print(f"TC: {TC:.5f}")
-    wandb.log({"Cv": TC})
+    # wandb.log({"Cv": TC})
 
     print(".. FINISH ..")

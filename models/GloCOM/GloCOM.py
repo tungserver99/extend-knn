@@ -170,24 +170,53 @@ class GloCOM(nn.Module):
         return cost
 
     def forward(self, input, is_ECR=True):
+        # local_x = input[:, :self.vocab_size]
+        # global_x = input[:, self.vocab_size:]
+        # local_adapter_theta, local_adapter_loss_KL = self.local_adapter_encode(local_x)
+        # global_theta, global_loss_KL = self.global_encode(global_x)
+        # beta = self.get_beta()
+        # # local_theta = global_theta * local_adapter_theta
+        # local_theta = F.softmax(global_theta * local_adapter_theta, dim=1)
+        # # quant_rst = self.topic_dist_quant(local_theta)
+
+        # recon_aug = F.softmax(self.decoder_bn(torch.matmul(F.softmax(global_theta * local_adapter_theta, dim=1), beta)), dim=-1)
+        # recon_loss_aug = -((local_x + self.aug_coef*global_x) * recon_aug.log()).sum(axis=1).mean()
+        # # recon_loss_aug = -((self.aug_coef*global_x) * recon_aug.log()).sum(axis=1).mean()
+        
+        # # recon = F.softmax(self.decoder_bn(torch.matmul(quant_rst['quantized'], beta)), dim=-1)
+        # # recon_loss = -((local_x) * recon.log()).sum(axis=1).mean()
+
+        # # loss_TM = recon_loss_aug + 2*global_loss_KL + 2*local_adapter_loss_KL + recon_loss + 2*quant_rst['loss']
+        # # loss_TM = (recon_loss_aug + recon_loss)/2 + global_loss_KL + local_adapter_loss_KL + quant_rst['loss']
+        # # loss_TM = recon_loss_aug + global_loss_KL + local_adapter_loss_KL + recon_loss + quant_rst['loss']
+        # loss_TM = recon_loss_aug + global_loss_KL + local_adapter_loss_KL
+
+        # if is_ECR:
+        #     loss_ECR = self.get_loss_ECR()
+        # else: 
+        #     loss_ECR = 0
+            
+        # loss = loss_TM + loss_ECR
+
+        # rst_dict = {
+        #     'loss': loss,
+        #     'loss_TM': loss_TM,
+        #     'loss_ECR': loss_ECR
+        # }
+
+        # return rst_dict
+        
+        
         local_x = input[:, :self.vocab_size]
         global_x = input[:, self.vocab_size:]
         local_adapter_theta, local_adapter_loss_KL = self.local_adapter_encode(local_x)
         global_theta, global_loss_KL = self.global_encode(global_x)
         beta = self.get_beta()
-        local_theta = global_theta * local_adapter_theta
-        quant_rst = self.topic_dist_quant(local_theta)
 
-        recon_aug = F.softmax(self.decoder_bn(torch.matmul(F.softmax(global_theta * local_adapter_theta, dim=1), beta)), dim=-1)
-        recon_loss_aug = -((local_x + self.aug_coef*global_x) * recon_aug.log()).sum(axis=1).mean()
-        # recon_loss_aug = -((self.aug_coef*global_x) * recon_aug.log()).sum(axis=1).mean()
-        
-        recon = F.softmax(self.decoder_bn(torch.matmul(quant_rst['quantized'], beta)), dim=-1)
-        recon_loss = -((local_x) * recon.log()).sum(axis=1).mean()
+        recon = F.softmax(self.decoder_bn(torch.matmul(F.softmax(global_theta * local_adapter_theta, dim=1), beta)), dim=-1)
+        recon_loss = -((local_x + self.aug_coef*global_x) * recon.log()).sum(axis=1).mean()
 
-        loss_TM = recon_loss_aug + 2*global_loss_KL + 2*local_adapter_loss_KL + recon_loss + 2*quant_rst['loss']
-        # loss_TM = (recon_loss_aug + recon_loss)/2 + global_loss_KL + local_adapter_loss_KL + quant_rst['loss']
-        # loss_TM = recon_loss_aug + global_loss_KL + local_adapter_loss_KL + recon_loss + quant_rst['loss']
+        loss_TM = recon_loss + global_loss_KL + local_adapter_loss_KL
 
         if is_ECR:
             loss_ECR = self.get_loss_ECR()
